@@ -24,16 +24,22 @@ async fn get_tickets_from_jira(config: &Configuration) -> Result<QueryResponse, 
 
     let client = Client::builder().cookie_store(true).build()?;
 
-    let _res = client
-        .post("http://localhost:8080/rest/auth/1/session")
+    let _login = client
+        .post(format!("{}{}", &config.jira_url, "/rest/auth/1/session"))
         .json(&map)
         .send()
         .await?;
 
-    let resp = client.get("http://localhost:8080/rest/api/2/search?jql=assignee%3D%27philipp.baum%27+AND+resolution+%3D+Unresolved").send().await?;
-    let text = resp.text().await?;
+    let ticket_resp = client
+        .get(format!(
+            "{}/rest/api/2/search?jql={}",
+            &config.jira_url, &config.query
+        ))
+        .send()
+        .await?;
+    let ticket_json = ticket_resp.text().await?;
 
-    Ok(serde_json::from_str(&text)?)
+    Ok(serde_json::from_str(&ticket_json)?)
 }
 
 fn write_md_todos(conf: &Configuration, tickets: Vec<Issue>) -> anyhow::Result<()> {
@@ -41,11 +47,11 @@ fn write_md_todos(conf: &Configuration, tickets: Vec<Issue>) -> anyhow::Result<(
 
     for t in tickets.iter() {
         md_todo_lines += &format!(
-            "- [ ] {} [{}] [{}] - {}\r\n",
+            "- [ ] {} \\[{}\\] `{}` - {}\r\n",
             t.key, t.fields.status.name, t.fields.priority.name, t.fields.summary
         );
     }
 
-    fs::write("test.md", md_todo_lines)?;
+    fs::write(&conf.md_file_path, md_todo_lines)?;
     Ok(())
 }
