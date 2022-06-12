@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize)]
 pub struct QueryResponse {
     #[serde(rename = "maxResults")]
     pub max_results: u64,
@@ -10,7 +10,7 @@ pub struct QueryResponse {
     pub issues: Vec<Issue>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize)]
 pub struct Issue {
     #[serde(rename = "self")]
     pub self_link: String,
@@ -19,19 +19,19 @@ pub struct Issue {
     pub fields: Field,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize)]
 pub struct Field {
     pub summary: String,
     pub priority: Priority,
     pub status: Status,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize)]
 pub struct Priority {
     pub name: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize)]
 pub struct Status {
     pub name: String,
 }
