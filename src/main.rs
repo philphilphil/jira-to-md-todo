@@ -47,8 +47,13 @@ fn write_md_todos(conf: &Configuration, tickets: Vec<Issue>) -> anyhow::Result<(
 
     for t in tickets.iter() {
         md_todo_lines += &format!(
-            "- [ ] {} \\[{}\\] `{}` - {}\r\n",
-            t.key, t.fields.status.name, t.fields.priority.name, t.fields.summary
+            "- [ ] [{}]({}/browse/{}) \\[{}\\] `{}` - {}\r\n",
+            t.key,
+            conf.jira_url,
+            t.key,
+            t.fields.status.name,
+            t.fields.priority.name,
+            t.fields.summary
         );
     }
 
