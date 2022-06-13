@@ -3,32 +3,42 @@ mod issue;
 use configuration::Configuration;
 use issue::Issue;
 use reqwest::Client;
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, env, fs};
 
 use crate::issue::QueryResponse;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
+    let mut args = env::args();
+    let print_request_output = args.nth(1).unwrap() == "-p";
+
     let config = Configuration::build();
 
-    let tickets = get_tickets_from_jira(&config).await?;
+    let tickets = get_tickets_from_jira(&config, print_request_output).await?;
     write_md_todos(&config, tickets.issues)?;
 
     Ok(())
 }
 
-async fn get_tickets_from_jira(config: &Configuration) -> Result<QueryResponse, anyhow::Error> {
+async fn get_tickets_from_jira(
+    config: &Configuration,
+    print: bool,
+) -> Result<QueryResponse, anyhow::Error> {
     let mut map = HashMap::new();
     map.insert("username", &config.username);
     map.insert("password", &config.password);
 
     let client = Client::builder().cookie_store(true).build()?;
 
-    let _login = client
+    let login = client
         .post(format!("{}{}", &config.jira_url, "/rest/auth/1/session"))
         .json(&map)
         .send()
         .await?;
+
+    if print {
+        println!("{}", login.text().await?)
+    }
 
     let ticket_resp = client
         .get(format!(
@@ -38,6 +48,10 @@ async fn get_tickets_from_jira(config: &Configuration) -> Result<QueryResponse, 
         .send()
         .await?;
     let ticket_json = ticket_resp.text().await?;
+
+    if print {
+        println!("{}", &ticket_json);
+    }
 
     Ok(serde_json::from_str(&ticket_json)?)
 }
