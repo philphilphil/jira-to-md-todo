@@ -1,5 +1,5 @@
-use config::Config;
-use std::{collections::HashMap, path::PathBuf, str::FromStr};
+use config::{Config, ConfigError};
+use std::{io::Write, path::PathBuf, str::FromStr};
 
 #[derive(Default)]
 pub struct Configuration {
@@ -11,36 +11,32 @@ pub struct Configuration {
 }
 
 impl Configuration {
-    pub fn build() -> Configuration {
+    pub fn build() -> Result<Configuration, ConfigError> {
         let mut conf = Configuration::default();
 
         let settings = Config::builder()
             .add_source(config::File::with_name("Settings"))
-            .build()
-            .unwrap()
-            .try_deserialize::<HashMap<String, String>>()
-            .unwrap();
+            .build()?;
 
-        conf.username = settings
-            .get("username")
-            .expect("Username missing.")
-            .to_string();
-        conf.password = settings
-            .get("password")
-            .expect("Password missing.")
-            .to_string();
-        conf.jira_url = settings
-            .get("jira_url")
-            .expect("Jira Url missing.")
-            .to_string();
-        conf.query = settings.get("query").expect("Query missing.").to_string();
+        conf.username = settings.get_string("username")?;
+        conf.password = settings.get_string("password")?;
 
-        let path_str = settings
-            .get("md_file_path")
-            .expect("Md file path missing.")
-            .to_string();
+        if conf.password.is_empty() {
+            conf.password = ask_for_password();
+        }
+
+        conf.jira_url = settings.get_string("jira_url")?;
+        conf.query = settings.get_string("query")?;
+
+        let path_str = settings.get_string("md_file_path")?;
         conf.md_file_path = PathBuf::from_str(&path_str).expect("Invalid md file path");
 
-        conf
+        Ok(conf)
     }
+}
+
+fn ask_for_password() -> String {
+    print!("Password: ");
+    std::io::stdout().flush().unwrap();
+    rpassword::read_password().unwrap()
 }

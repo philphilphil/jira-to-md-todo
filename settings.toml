@@ -1,5 +1,5 @@
 username = "username"
-password = "pw"
+password = ""
 jira_url = "http://localhost:8080"
 query = "assignee='philipp.baum' AND resolution = Unresolved"
 md_file_path = "/Users/phil/Notes/Arbeit/0 Meta/021 Jira Tasks.md"

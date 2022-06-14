@@ -10,11 +10,12 @@ use crate::issue::QueryResponse;
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let mut args = env::args();
-    let print_request_output = args.nth(1).unwrap() == "-p";
+    let print_request_output = args.nth(1).unwrap_or_default() == "-p";
 
-    let config = Configuration::build();
+    let config = Configuration::build().expect("Issue building settings.");
 
     let tickets = get_tickets_from_jira(&config, print_request_output).await?;
+    println!("Found {} tickets.", tickets.total);
     write_md_todos(&config, tickets.issues)?;
 
     Ok(())
@@ -37,7 +38,7 @@ async fn get_tickets_from_jira(
         .await?;
 
     if print {
-        println!("{}", login.text().await?)
+        println!("Auth:\r\n{}\r\n", login.text().await?);
     }
 
     let ticket_resp = client
@@ -50,7 +51,7 @@ async fn get_tickets_from_jira(
     let ticket_json = ticket_resp.text().await?;
 
     if print {
-        println!("{}", &ticket_json);
+        println!("Tickets:\r\n{}\r\n", &ticket_json);
     }
 
     Ok(serde_json::from_str(&ticket_json)?)
